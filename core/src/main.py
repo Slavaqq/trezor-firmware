@@ -54,5 +54,3 @@ while True:
     with unimport_manager:
         import session  # noqa: F401
         del session
-
-    print("reboot")
