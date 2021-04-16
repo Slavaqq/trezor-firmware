@@ -284,6 +284,20 @@ class UnexpectedMessageError(Exception):
 async def _handle_single_message(
     ctx: Context, msg: codec_v1.Message, use_workflow: bool
 ) -> codec_v1.Message | None:
+    """Handle a message that was loaded from USB by the caller.
+
+    Find the appropriate handler, run it and write its result on the wire. In case
+    a problem is encountered at any point, write the appropriate error on the wire.
+
+    If the workflow finished normally or with an error, the return value is None.
+
+    If an unexpected message had arrived on the wire while the workflow was processing,
+    the workflow is shut down with an `UnexpectedMessageError`. This is not considered
+    an "error condition" to return over the wire -- instead the message is processed
+    as if starting a new workflow.
+    In such case, the `UnexpectedMessageError` is caught and the message is returned
+    to the caller. It will then be processed in the next iteration of the message loop.
+    """
     if __debug__:
         try:
             msg_type = messages.get_type(msg.type).__name__
@@ -340,9 +354,7 @@ async def _handle_single_message(
         # something unexpected came in.  See Context.read() for
         # example, which expects some particular message and raises
         # UnexpectedMessageError if another one comes in.
-        # In order not to lose the message, we pass on the reader
-        # to get picked up by the workflow logic in the beginning of
-        # the cycle, which processes it in the usual manner.
+        # In order not to lose the message, we return it to the caller.
         # TODO:
         # We might handle only the few common cases here, like
         # Initialize and Cancel.
@@ -350,9 +362,9 @@ async def _handle_single_message(
 
     except BaseException as exc:
         # Either:
-        # - the first workflow message had a type that has a
-        #   registered handler, but does not have a protobuf class
-        # - the first workflow message was not a valid protobuf
+        # - the message had a type that has a registered handler, but does not have
+        #   a protobuf class
+        # - the message was not valid protobuf
         # - workflow raised some kind of an exception while running
         # - something canceled the workflow from the outside
         if __debug__:
@@ -408,7 +420,8 @@ async def handle_session(
                 if not __debug__ or not is_debug_session:
                     # Unload modules imported by the workflow.  Should not raise.
                     # This is not done for the debug session because the snapshot taken
-                    # in a debug session would clear
+                    # in a debug session would clear modules which are in use by the
+                    # workflow running on wire.
                     utils.unimport_end(modules)
 
                     if next_msg is None:
@@ -418,7 +431,8 @@ async def handle_session(
                         return
 
         except Exception as exc:
-            # The session handling should never exit, just log and continue.
+            # Log and try again. The session handler can only exit explicitly via
+            # loop.clear() above.
             if __debug__:
                 log.exception(__name__, exc)
 
