@@ -8,7 +8,7 @@ from . import workflow_handlers
 
 if False:
     import protobuf
-    from typing import Iterable, NoReturn, Protocol
+    from typing import NoReturn
     from trezor.messages.Features import Features
     from trezor.messages.Initialize import Initialize
     from trezor.messages.EndSession import EndSession
