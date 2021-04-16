@@ -19,15 +19,6 @@ if False:
     from trezor.messages.DoPreauthorized import DoPreauthorized
     from trezor.messages.CancelAuthorization import CancelAuthorization
 
-if False:
-
-    class Authorization(Protocol):
-        def expected_wire_types(self) -> Iterable[int]:
-            ...
-
-        def __del__(self) -> None:
-            ...
-
 
 def get_features() -> Features:
     import storage.recovery
