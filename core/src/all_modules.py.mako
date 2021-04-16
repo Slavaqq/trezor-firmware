@@ -1,4 +1,4 @@
-# generated from resources.py.mako
+# generated from all_modules.py.mako
 # do not edit manually!
 # flake8: noqa
 # fmt: off
