@@ -1,5 +1,6 @@
 if False:
     import protobuf
+    from typing import Type
 
 
 def get_type(wire_type: int) -> Type[protobuf.MessageType]:
@@ -13,6 +14,6 @@ def get_type(wire_type: int) -> Type[protobuf.MessageType]:
             module = __import__(
                 "trezor.messages.%s" % msg_name, None, None, (msg_name,), 0
             )
-            return getattr(module, msg_name)
+            return getattr(module, msg_name)  # type: ignore
 
     raise KeyError
